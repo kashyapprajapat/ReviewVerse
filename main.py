@@ -12,7 +12,8 @@ from bson import ObjectId
 import psutil # type: ignore
 from welcomeEmail import send_email_via_gmail
 from dotenv import load_dotenv
-
+import redis.asyncio as redis  # type: ignore
+import json
 
 # Load environment variables from .env file
 load_dotenv()
@@ -42,6 +43,22 @@ db = client['reviewverse_db']
 # MongoDB collections
 users_collection = db["users"]
 reviews_collection = db["reviews"]
+
+# Get Redis connection details from environment variables
+redis_host = os.getenv("REDIS_HOST")
+redis_port = os.getenv("REDIS_PORT")
+redis_password = os.getenv("REDIS_PASSWORD")
+redis_ssl = os.getenv("REDIS_SSL") == "True"
+
+# Redis connection setup
+r = redis.Redis(
+    host=redis_host,
+    port=redis_port,
+    password=redis_password,
+    ssl=redis_ssl,
+)
+
+
 
 @app.get("/", response_class=HTMLResponse)
 async def home():
@@ -236,10 +253,30 @@ async def delete_user(user_id: str):
 # Endpoint to get all registered users' basic details
 @app.get("/users")
 async def get_users():
+    """
+    Fetch the list of users from MongoDB with Redis caching.
+    """
+    # Define cache key
+    cache_key = "users_list"
+
+    # Check if data exists in Redis
+    cached_users = r.get(cache_key)
+    
+    if cached_users:
+        # Decode JSON from Redis and return cached data
+        users = json.loads(cached_users)
+        return JSONResponse(content={"users": users})
+
+    # If not in cache, fetch from MongoDB
     users_cursor = users_collection.find({}, {"_id": 0, "username": 1, "gender": 1, "age": 1, "currentrole": 1})
     users = await users_cursor.to_list(length=None)
-    
+
+    # Cache the result in Redis with a TTL (e.g., 600 seconds = 10 minutes)
+    r.setex(cache_key, 600, json.dumps(users))
+    print("Data Save in Redis suceesfully..")
     return JSONResponse(content={"users": users})
+
+
 
 # Helper function to convert ObjectId to string for response
 def str_objectid(id: ObjectId) -> str:
@@ -409,10 +446,23 @@ async def get_review(review_id: str):
 
 @app.get("/get-reviews")
 async def get_reviews(page: int = 1, limit: int = 10):
-    # Calculate the number of reviews to skip based on the page
-    skip = (page - 1) * limit
+    """
+    Fetch reviews from MongoDB with Redis caching.
+    Reviews are cached for 12 hours (43200 seconds).
+    """
+    # Define cache key based on page and limit to store reviews
+    cache_key = f"reviews_page_{page}_limit_{limit}"
 
-    # Fetch the reviews with pagination
+    # Check if reviews are cached in Redis
+    cached_reviews = await r.get(cache_key)  # This should be awaited in async context
+    
+    # Redis returns bytes, so we need to decode it into a string
+    if cached_reviews:
+        reviews = json.loads(cached_reviews.decode("utf-8"))
+        return JSONResponse(content={"message": "Reviews fetched from cache", "reviews": reviews})
+
+    # If not cached, fetch from MongoDB
+    skip = (page - 1) * limit
     reviews_cursor = reviews_collection.find().skip(skip).limit(limit)
     reviews = await reviews_cursor.to_list(length=limit)
 
@@ -426,7 +476,11 @@ async def get_reviews(page: int = 1, limit: int = 10):
     for review in reviews:
         review["_id"] = str(review["_id"])
 
+    # Cache the reviews in Redis with a TTL of 12 hours (43200 seconds)
+    await r.setex(cache_key, 43200, json.dumps(reviews))  # Using async setex
+
     return JSONResponse(content={"message": "Reviews fetched successfully", "reviews": reviews})
+
 
 
 @app.put("/update-review/{user_id}/{review_id}")

@@ -11,3 +11,20 @@ MONGO_URI=mongodb+srv://username:password@your-cluster.mongodb.net/ # Replace wi
 EMAIL_SENDER=your-email@example.com       # Replace with the sender's email address
 EMAIL_PASSWORD=your-email-password-or-app-password # Replace with the sender's email password or App Password
 # Note: For Gmail, you may need to create an App Password instead of using your actual password.
+
+
+# Redis Configuration
+# Replace the values below with your own Redis connection details
+# The host address of your Redis instance.
+REDIS_HOST=your-redis-host 
+
+# The port Redis is running on. The default Redis port is 6379.
+REDIS_PORT=6379 # Default port for Redis
+
+# Password to connect to Redis. If your Redis instance requires a password, enter it here.
+REDIS_PASSWORD=your-redis-password 
+
+# Set this to "True" if your Redis instance requires an SSL connection.
+# For example, if you're using Upstash or another cloud provider that uses SSL, set it to True.
+REDIS_SSL=True # Set to True for SSL or False if not using SSL
+
