@@ -19,7 +19,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 import time
 from collections import defaultdict, deque
 from typing import Dict, Deque
-
+from logging_middleware import LoggingMiddleware
 
 
 # Load environment variables from .env file
@@ -91,6 +91,8 @@ class AdvancedMiddleware(BaseHTTPMiddleware):
 # Add the advanced middleware to the app
 app.add_middleware(AdvancedMiddleware)
 
+# Add the logging middleware
+app.add_middleware(LoggingMiddleware)
 
 # Database setup (MongoDB with provided URI)
 client = AsyncIOMotorClient(os.getenv("MONGO_URI"))
