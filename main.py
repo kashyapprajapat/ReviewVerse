@@ -256,25 +256,32 @@ async def get_users():
     """
     Fetch the list of users from MongoDB with Redis caching.
     """
-    # Define cache key
     cache_key = "users_list"
-
-    # Check if data exists in Redis
-    cached_users = r.get(cache_key)
     
-    if cached_users:
-        # Decode JSON from Redis and return cached data
-        users = json.loads(cached_users)
-        return JSONResponse(content={"users": users})
-
+    # Check if data exists in Redis
+    try:
+        cached_users = await r.get(cache_key)
+        if cached_users:
+            print(f"Cache hit for users: {cached_users}")
+            users = json.loads(cached_users)
+            return JSONResponse(content={"users": users})
+    except Exception as e:
+        print(f"Error fetching from Redis: {e}")
+    
     # If not in cache, fetch from MongoDB
-    users_cursor = users_collection.find({}, {"_id": 0, "username": 1, "gender": 1, "age": 1, "currentrole": 1})
-    users = await users_cursor.to_list(length=None)
+    try:
+        users_cursor = users_collection.find({}, {"_id": 0, "username": 1, "gender": 1, "age": 1, "currentrole": 1})
+        users = await users_cursor.to_list(length=None)
+        print(f"Fetched users from MongoDB: {users}")
+        
+        # Cache the result in Redis with a TTL (e.g., 600 seconds = 10 minutes)
+        await r.setex(cache_key, 600, json.dumps(users))  # Await Redis setex command
+        print("Data saved in Redis successfully..")
+        
+        return JSONResponse(content={"users": users})
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error fetching users: {e}")
 
-    # Cache the result in Redis with a TTL (e.g., 600 seconds = 10 minutes)
-    r.setex(cache_key, 600, json.dumps(users))
-    print("Data Save in Redis suceesfully..")
-    return JSONResponse(content={"users": users})
 
 
 
