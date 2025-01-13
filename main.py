@@ -14,6 +14,13 @@ from welcomeEmail import send_email_via_gmail
 from dotenv import load_dotenv
 import redis.asyncio as redis  # type: ignore
 import json
+from fastapi import FastAPI, Request, Response
+from starlette.middleware.base import BaseHTTPMiddleware
+import time
+from collections import defaultdict, deque
+from typing import Dict, Deque
+
+
 
 # Load environment variables from .env file
 load_dotenv()
@@ -35,6 +42,55 @@ app = FastAPI(
         "email": "reviewverseone@gmail.com",
     },
 )
+
+
+# Rate Limmiting Middleware 1 minute 7 request
+class AdvancedMiddleware(BaseHTTPMiddleware):
+    def __init__(self, app):
+        super().__init__(app)
+        self.rate_limit_records: Dict[str, Deque[float]] = defaultdict(deque)
+
+    async def log_message(self, message: str):
+        print(message)
+
+    async def dispatch(self, request: Request, call_next):
+        client_ip = request.client.host
+        current_time = time.time()
+        request_log = self.rate_limit_records[client_ip]
+
+        # Remove requests older than 60 seconds
+        while request_log and current_time - request_log[0] > 60:
+            request_log.popleft()
+
+        # Check if the number of requests exceeds the limit
+        if len(request_log) >= 7:  # Limit to 7 requests per minute
+            return Response(content="Rate limit exceeded", status_code=429)
+
+        # Log the current request time
+        request_log.append(current_time)
+
+        # Asynchronous logging
+        path = request.url.path
+        await self.log_message(f"Request to {path} from {client_ip}")
+
+        # Process the request
+        start_time = time.time()
+        response = await call_next(request)
+        process_time = time.time() - start_time
+
+        # Add custom headers without modifying the original headers object
+        custom_headers = {"X-Process-Time": str(process_time)}
+        for header, value in custom_headers.items():
+            response.headers.append(header, value)
+
+        # Asynchronous logging for processing time
+        await self.log_message(f"Response for {path} took {process_time} seconds")
+
+        return response
+    
+# Add the advanced middleware to the app
+app.add_middleware(AdvancedMiddleware)
+
 
 # Database setup (MongoDB with provided URI)
 client = AsyncIOMotorClient(os.getenv("MONGO_URI"))
