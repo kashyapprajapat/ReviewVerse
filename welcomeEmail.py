@@ -1,12 +1,17 @@
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from dotenv import load_dotenv
+import os
+
+# Load environment variables from .env file
+load_dotenv()
 
 def send_email_via_gmail(receiver_email, receiver_name, subject=None):
     try:
         # Sender's email credentials
-        sender_email = "reviewverseone@gmail.com"  # Your Gmail address
-        sender_password = "kykf npru ftzb nmea"  # Your Gmail password or App Password
+        sender_email = os.getenv("EMAIL_SENDER")
+        sender_password = os.getenv("EMAIL_PASSWORD")
 
         # Default subject list
         default_subject = f"Welcome to ReviewVerse! 🎉 Thank you for joining, {receiver_name}! 🎁✨"
@@ -66,7 +71,7 @@ def send_email_via_gmail(receiver_email, receiver_name, subject=None):
         # Set up the Gmail SMTP server
         server = smtplib.SMTP('smtp.gmail.com', 587)
         server.starttls()  # Secure the connection
-        server.login(sender_email, sender_password)  # Login to the server
+        server.login(sender_email, sender_password) 
 
         # Send the email
         text = msg.as_string()

@@ -2,22 +2,26 @@ from fastapi import FastAPI, File, UploadFile, Form, HTTPException, status, Quer
 from pydantic import EmailStr
 from models import UserRegistrationModel 
 from models import BookReviewModel  
-import cloudinary
-import cloudinary.uploader
+import cloudinary # type: ignore
+import cloudinary.uploader # type: ignore
 from motor.motor_asyncio import AsyncIOMotorClient
 from fastapi.responses import HTMLResponse, JSONResponse
-import bcrypt 
+import bcrypt  # type: ignore
 import os
 from bson import ObjectId
-import psutil
+import psutil # type: ignore
 from welcomeEmail import send_email_via_gmail
+from dotenv import load_dotenv
 
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Initialize Cloudinary with direct credentials
 cloudinary.config(
-    cloud_name="dpf5bkafv", 
-    api_key="312872495236641", 
-    api_secret="1ehzq6KnCU10UcqUOMe6qoN0NLc"
+    cloud_name=os.getenv("CLOUDINARY_CLOUD_NAME"),
+    api_key=os.getenv("CLOUDINARY_API_KEY"),
+    api_secret=os.getenv("CLOUDINARY_API_SECRET")
 )
 
 # Initialize FastAPI
@@ -32,7 +36,7 @@ app = FastAPI(
 )
 
 # Database setup (MongoDB with provided URI)
-client = AsyncIOMotorClient('mongodb+srv://kashyap:kashyap@reviewverse.7zslr.mongodb.net/')
+client = AsyncIOMotorClient(os.getenv("MONGO_URI"))
 db = client['reviewverse_db']
 
 # MongoDB collections

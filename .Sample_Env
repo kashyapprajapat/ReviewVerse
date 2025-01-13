@@ -1,0 +1,13 @@
+# Cloudinary Configuration
+CLOUDINARY_CLOUD_NAME=your-cloudinary-cloud-name  # Replace with your Cloudinary cloud name
+CLOUDINARY_API_KEY=your-cloudinary-api-key       # Replace with your Cloudinary API key
+CLOUDINARY_API_SECRET=your-cloudinary-api-secret # Replace with your Cloudinary API secret
+
+# MongoDB Configuration
+MONGO_URI=mongodb+srv://username:password@your-cluster.mongodb.net/ # Replace with your MongoDB URI. 
+# Example: mongodb+srv://user:pass@clustername.mongodb.net/database_name
+
+# Email Configuration
+EMAIL_SENDER=your-email@example.com       # Replace with the sender's email address
+EMAIL_PASSWORD=your-email-password-or-app-password # Replace with the sender's email password or App Password
+# Note: For Gmail, you may need to create an App Password instead of using your actual password.
