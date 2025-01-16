@@ -64,7 +64,58 @@ class AdvancedMiddleware(BaseHTTPMiddleware):
 
         # Check if the number of requests exceeds the limit
         if len(request_log) >= 7:  # Limit to 7 requests per minute
-            return Response(content="Rate limit exceeded", status_code=429)
+            html_content = f"""
+            <!DOCTYPE html>
+            <html lang="en">
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>Rate Limit Exceeded</title>
+                <style>
+                    body {{
+                        display: flex;
+                        justify-content: center;
+                        align-items: center;
+                        min-height: 100vh;
+                        margin: 0;
+                        background-color: #f4f4f4;
+                        font-family: Arial, sans-serif;
+                        text-align: center;
+                        color: #333;
+                    }}
+                    .container {{
+                        max-width: 500px;
+                        background: #fff;
+                        padding: 20px;
+                        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+                        border-radius: 8px;
+                    }}
+                    img {{
+                        max-width: 100%;
+                        height: auto;
+                        margin-bottom: 20px;
+                        border-radius: 8px;
+                    }}
+                    h1 {{
+                        font-size: 1.8rem;
+                        margin-bottom: 10px;
+                        color: #d9534f;
+                    }}
+                    p {{
+                        font-size: 1rem;
+                    }}
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <img src="https://res.cloudinary.com/dpf5bkafv/image/upload/v1737006237/i5uzwnxn5gh2qz85kcyz.png" alt="Rate Limit Exceeded">
+                    <h1>Rate Limit Exceeded</h1>
+                    <p>You have made too many requests. Please try again after a minute.</p>
+                </div>
+            </body>
+            </html>
+            """
+            return Response(content=html_content, media_type="text/html", status_code=429)
 
         # Log the current request time
         request_log.append(current_time)
