@@ -460,6 +460,7 @@ async def login_user(
     # If the user exists and the password matches, return success
     return JSONResponse(
         content={"message": "User logged in successfully", "user": {
+             "id": str(user["_id"]),
             "username": user["username"],
             "email": user["email"],
             "gender": user["gender"],
