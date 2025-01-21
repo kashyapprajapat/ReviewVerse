@@ -546,20 +546,22 @@ async def add_review(
         return HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
 
 
-@app.get("/get-review/{review_id}")
-async def get_review(review_id: str):
-    # Fetch the review by review_id from the database
-    review = await reviews_collection.find_one({"_id": ObjectId(review_id)})
-    if not review:
+@app.get("/get-reviews/{user_id}")
+async def get_reviews(user_id: str):
+    # Fetch all reviews associated with the provided user_id
+    reviews = await reviews_collection.find({"user_id": user_id}).to_list(length=None)
+    if not reviews:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Review not found"
+            detail="No reviews found for this user"
         )
     
-    # Convert the ObjectId to string for the response
-    review["_id"] = str(review["_id"])
+    # Convert ObjectId to string for all reviews
+    for review in reviews:
+        review["_id"] = str(review["_id"])
     
-    return JSONResponse(content={"message": "Review fetched successfully", "review": review})
+    return JSONResponse(content={"message": "Reviews fetched successfully", "reviews": reviews})
+
 
 @app.get("/get-reviews")
 async def get_reviews(page: int = 1, limit: int = 10):
